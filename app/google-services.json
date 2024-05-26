@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "397784755693",
+    "project_id": "chatapp-da272",
+    "storage_bucket": "chatapp-da272.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:397784755693:android:1c41c01189bad074e24be4",
+        "android_client_info": {
+          "package_name": "com.example.chatiba"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgsrMn2ohj-is8Pt4keHZhZmZDEOYsHeE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
