@@ -9,13 +9,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.example.chatiba.ui.AuthScreen
 import com.example.chatiba.ui.ChatScreen
+import com.example.chatiba.ui.UserSearchScreen
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import com.example.chatiba.ui.UserSearchScreen
 
 data class User(val email: String = "", val uid: String = "")
-data class Conversations(val id: String, val members: List<String>)
+data class Conversations(
+    var id: String = "",
+    var members: List<String> = listOf()
+) {
+    constructor() : this("", listOf())
+}data class Message(val senderId: String = "", val text: String = "", val timestamp: Long = 0)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +51,7 @@ class MainActivity : ComponentActivity() {
                             uid = currentUser?.uid ?: ""
                         ),
                         recipientUser = selectedUser!!,
-                        onSearchUsers = {
+                        onBack = {
                             selectedUser = null
                             selectedConversation = null
                         }
@@ -68,7 +73,7 @@ class MainActivity : ComponentActivity() {
                                 uid = currentUser?.uid ?: ""
                             ),
                             recipientUser = user,
-                            onSearchUsers = {
+                            onBack = {
                                 selectedUser = null
                                 selectedConversation = null
                                 recipientUser = null

@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.chatiba.Conversations
+import com.example.chatiba.Message
 import com.example.chatiba.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -25,17 +26,34 @@ fun UserSearchScreen(
     var query by remember { mutableStateOf("") }
     val users = remember { mutableStateListOf<User>() }
     val conversations = remember { mutableStateListOf<Conversations>() }
+    val messages = remember { mutableStateMapOf<String, List<Message>>() } // Map to store messages for each conversation
 
+    // Fetch all conversations for the current user
     LaunchedEffect(currentUser.uid) {
-        // Fetch old conversations for the current user
-        val ref = Firebase.database.reference.child("conversations")
-        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+        val conversationsRef = Firebase.database.reference.child("conversations")
+        conversationsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 conversations.clear()
                 for (data in snapshot.children) {
-                    val conversation = data.getValue() as Conversations
+                    val conversation = data.getValue(Conversations::class.java)
                     if (conversation != null && conversation.members.contains(currentUser.uid)) {
                         conversations.add(conversation)
+                        // Fetch messages for each conversation
+                        val messagesRef = Firebase.database.reference.child("messages").child(data.key!!)
+                        messagesRef.addValueEventListener(object : ValueEventListener {
+                            override fun onDataChange(messageSnapshot: DataSnapshot) {
+                                val messageList = mutableListOf<Message>()
+                                for (messageData in messageSnapshot.children) {
+                                    val message = messageData.getValue(Message::class.java)
+                                    message?.let { messageList.add(it) }
+                                }
+                                messages[data.key!!] = messageList
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                // Handle database error
+                            }
+                        })
                     }
                 }
             }
@@ -46,6 +64,7 @@ fun UserSearchScreen(
         })
     }
 
+    // Display users and conversations
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(16.dp)) {
@@ -58,12 +77,12 @@ fun UserSearchScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = {
-                val ref = Firebase.database.reference.child("users")
-                ref.addListenerForSingleValueEvent(object : ValueEventListener {
+                val usersRef = Firebase.database.reference.child("users")
+                usersRef.addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         users.clear()
                         for (data in snapshot.children) {
-                            val user = data.getValue() as User
+                            val user = data.getValue(User::class.java)
                             if (user != null && user.email.contains(query, ignoreCase = true)) {
                                 users.add(user)
                             }
@@ -84,7 +103,11 @@ fun UserSearchScreen(
         Text("Conversations", style = MaterialTheme.typography.titleLarge)
         LazyColumn {
             items(conversations) { conversation ->
-                ConversationItem(conversation = conversation, onClick = { onConversationSelected(conversation) })
+                ConversationItem(
+                    conversation = conversation,
+                    messages = messages[conversation.id],
+                    onClick = { onConversationSelected(conversation) }
+                )
             }
         }
 
@@ -113,7 +136,7 @@ fun UserItem(user: User, onClick: () -> Unit) {
 }
 
 @Composable
-fun ConversationItem(conversation: Conversations, onClick: () -> Unit) {
+fun ConversationItem(conversation: Conversations, messages: List<Message>?, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
